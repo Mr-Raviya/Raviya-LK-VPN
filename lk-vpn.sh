@@ -1,0 +1,54 @@
+#!/bin/bash
+
+CONFIG_FILE="lk.conf"
+WG_FILE="/etc/wireguard/lk.conf"
+
+clear
+echo "========================="
+echo "   Raviya LK VPN"
+echo "========================="
+echo "1) Connect"
+echo "2) Disconnect"
+echo "3) Exit"
+echo ""
+
+read -p "Choose an option [1-3]: " choice
+
+connect_vpn() {
+    echo "[+] Decoding config..."
+
+    cat $CONFIG_FILE | rev | tr 'A-Za-z' 'a-zA-Z' | base64 -d > decoded.conf
+
+    echo "[+] Fixing dynamic values..."
+
+    IPADDR=$(curl -s ifconfig.me)
+    IFACE=$(ip route | grep default | awk '{print $5}')
+    GATEWAY=$(ip route | grep default | awk '{print $3}')
+
+    sed -i "s/IPADDR/$IPADDR/g" decoded.conf
+    sed -i "s/IFACE/$IFACE/g" decoded.conf
+    sed -i "s/GATEWAY/$GATEWAY/g" decoded.conf
+
+    echo "[+] Moving config to WireGuard..."
+
+    sudo mkdir -p /etc/wireguard
+    sudo cp decoded.conf $WG_FILE
+
+    echo "[+] Starting VPN..."
+    sudo wg-quick up lk
+
+    echo "[✓] Connected!"
+}
+
+disconnect_vpn() {
+    echo "[+] Disconnecting..."
+    sudo wg-quick down lk
+    echo "[✓] Disconnected!"
+}
+
+case $choice in
+    1) connect_vpn ;;
+    2) disconnect_vpn ;;
+    3) exit ;;
+    *) echo "Invalid option" ;;
+esac
