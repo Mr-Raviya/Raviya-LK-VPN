@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# දැනට ස්ක්‍රිප්ට් එක ඇති තැනින් lk.conf සෙවීම
-CONFIG_FILE="lk.conf"
+# Config ෆයිල් එක ඇති නිවැරදි ස්ථානය ලබා දීම
+CONFIG_FILE="/usr/local/bin/lk.conf"
 WG_FILE="/etc/wireguard/lk.conf"
 
 clear
@@ -16,21 +16,20 @@ echo ""
 read -p "Choose an option [1-3]: " choice
 
 connect_vpn() {
+    # ෆයිල් එක තිබේදැයි පරීක්ෂා කිරීම
     if [ ! -f "$CONFIG_FILE" ]; then
-        echo "[!] Error: lk.conf not found in current directory!"
+        echo "[!] Error: $CONFIG_FILE not found!"
         exit 1
     fi
 
     echo "[+] Decoding config..."
-    # ඔබේ logic එකට අනුව decode කිරීම 
-    cat "$CONFIG_FILE" | rev | tr 'A-Za-z' 'a-zA-Z' | base64 -d > decoded.conf
+    cat "$CONFIG_FILE" | rev | tr 'A-Za-z' 'a-zA-Z' | base64 -d > decoded.conf [cite: 2]
 
     echo "[+] Fixing dynamic values..."
     IPADDR=$(curl -s ifconfig.me)
     IFACE=$(ip route | grep default | awk '{print $5}')
     GATEWAY=$(ip route | grep default | awk '{print $3}')
 
-    # වැදගත්: decoded.conf එකේ මේ වචන තිබිය යුතුයි 
     sed -i "s/IPADDR/$IPADDR/g" decoded.conf
     sed -i "s/IFACE/$IFACE/g" decoded.conf
     sed -i "s/GATEWAY/$GATEWAY/g" decoded.conf
@@ -43,13 +42,13 @@ connect_vpn() {
     sudo wg-quick up lk [cite: 3]
 
     echo "[✓] Connected!"
-}
+} [cite: 4]
 
 disconnect_vpn() {
     echo "[+] Disconnecting..."
-    sudo wg-quick down lk [cite: 5]
+    sudo wg-quick down lk
     echo "[✓] Disconnected!"
-}
+} [cite: 5]
 
 case $choice in
     1) connect_vpn ;;
